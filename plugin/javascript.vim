@@ -25,10 +25,10 @@ endfunction
 
 ruby << EOF
 # TODO:
+# QUESTION: How to read and write Vim variables from ruby?
 # Implement runner tester (isBuster?)
 # Make it work with specs an contexts
 # Add custom test name prefix/string?
-# Make it so test names can have : in them
 # Add option to not clear previous results (slows loop?)
 # Make the script more extensible for other testrunners
 # i.e. How to dynamically include/mixin an interface to pick up necessary methods
@@ -65,7 +65,7 @@ class JavaScriptTest
     parts = line.split(":")
     return unless parts.length && parts.last =~ /function/
 
-    # So far so good! Parse out the test name (returned via magic var)
+    # So far so good!
     parts.pop
     parts.join(":").scan(/([^"|']+)/)
     $1
@@ -79,13 +79,7 @@ class JavaScriptTest
     method_name = nil
     # parse = parse_buster_test_name if is_buster?
 
-    # Buster test format:
-    # "STRING": function () { asserts... }
-    # Pass method name as string to CLI
-    #   e.g. buster test "foo"
-    #   NOTE: treated as a RegExp for fuzzy matching
-    #   Can't run test case (should be one per file anyway)
-    (line_number + 1).downto(1) do |line_number|
+    (line_number).downto(1) do |line_number|
       method_name = parse_buster_test_name(VIM::Buffer.current[line_number])
       break if method_name
     end
