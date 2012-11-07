@@ -11,11 +11,13 @@ module VimBufferParser
   # Returns test name or nil
   def parse_test_name(line)
     # Rudimentary test for key:value object member syntax + check for method sig
-    line = line.split(":")
-    return unless line.length && line[1] =~ /function/
+    # One way - check number of splits, OR just check the last one has function?
+    parts = line.split(":")
+    return unless parts.length && parts.last =~ /function/
 
     # So far so good! Parse out the test name (returned via magic var)
-    line[0].scan(/([^"|']+)/)
+    parts.pop
+    parts.join(":").scan(/([^"|']+)/)
     $1
   end
 

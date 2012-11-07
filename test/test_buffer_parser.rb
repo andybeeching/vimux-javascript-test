@@ -23,6 +23,11 @@ class TestVimBufferParser < MiniTest::Unit::TestCase
     assert_equal("foo", parse_test_name('"foo":function(){}'))
     assert_equal("foo bar", parse_test_name('"foo bar":function(){}'))
     assert_equal("foo bar", parse_test_name('   "foo bar":function(){}    '))
+
+    # Truthy - Test name with colon character
+    assert_equal("foo:bar", parse_test_name('"foo:bar":function(){}'))
+    assert_equal("foo:bar:baz", parse_test_name('"foo:bar:baz":function(){}'))
+    assert_equal(":", parse_test_name('":":function(){}'))
   end
 
 end
