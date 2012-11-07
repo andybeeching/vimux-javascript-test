@@ -4,6 +4,13 @@
 #       proved useful given Vim's lack of tooling for creating
 #       plugins in ruby.
 #
+# Buster test format:
+# "STRING": function () { asserts... }
+# Pass method name as string to CLI
+#   e.g. buster test "foo"
+#   NOTE: treated as a RegExp for fuzzy matching
+#   Can't run test case (should be one per file anyway)
+
 module VimBufferParser
 
   # Method to parse a string for a buster test case
@@ -11,7 +18,6 @@ module VimBufferParser
   # Returns test name or nil
   def parse_test_name(line)
     # Rudimentary test for key:value object member syntax + check for method sig
-    # One way - check number of splits, OR just check the last one has function?
     parts = line.split(":")
     return unless parts.length && parts.last =~ /function/
 
