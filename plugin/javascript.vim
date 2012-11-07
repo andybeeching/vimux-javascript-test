@@ -24,6 +24,14 @@ function s:RunJavaScriptFocusedContext()
 endfunction
 
 ruby << EOF
+# TODO:
+# Implement runner tester (isBuster?)
+# Make it work with specs an contexts
+# Add custom test name prefix/string?
+# Make it so test names can have : in them
+# Add option to not clear previous results (slows loop?)
+# Make the script more extensible for other testrunners
+# i.e. How to dynamically include/mixin an interface to pick up necessary methods
 module VIM
   class Buffer
     def method_missing(method, *args, &block)
@@ -46,9 +54,13 @@ class JavaScriptTest
     VIM::Buffer.current.line_number
   end
 
+  def is_buster?
+    true
+  end
+
   # Method to parse a string for a buster test
   # Returns test name or nil
-  def parse_test_name(line)
+  def parse_buster_test_name(line)
     # Rudimentary test for key:value object member syntax + check for method sig
     line = line.split(":")
     return unless line.length && line[1] =~ /function/
@@ -64,6 +76,7 @@ class JavaScriptTest
 
   def run_unit_test
     method_name = nil
+    # parse = parse_buster_test_name if is_buster?
 
     # Buster test format:
     # "STRING": function () { asserts... }
@@ -72,7 +85,7 @@ class JavaScriptTest
     #   NOTE: treated as a RegExp for fuzzy matching
     #   Can't run test case (should be one per file anyway)
     (line_number + 1).downto(1) do |line_number|
-      method_name = parse_test_name(VIM::Buffer.current[line_number])
+      method_name = parse_buster_test_name(VIM::Buffer.current[line_number])
       break if method_name
     end
 
