@@ -10,10 +10,10 @@ class TestVimBufferParser < MiniTest::Unit::TestCase
 
   include VimBufferParser
 
-  def test_parse_test_name
+  def test_parse_test_name_basic
     # Falsy
-    assert_equal(parse_test_name("foo"), nil)
-    assert_equal(parse_test_name("  foo "), nil)
+    assert_nil(parse_test_name("foo"))
+    assert_nil(parse_test_name("  foo "));
 
     # Truthy - Single Quotes
     assert_equal('foo', parse_test_name('"foo":function(){}'))
@@ -28,6 +28,16 @@ class TestVimBufferParser < MiniTest::Unit::TestCase
     assert_equal("foo:bar", parse_test_name('"foo:bar":function(){}'))
     assert_equal("foo:bar:baz", parse_test_name('"foo:bar:baz":function(){}'))
     assert_equal(":", parse_test_name('":":function(){}'))
+  end
+
+  def test_parse_name_lifecycle
+    # Falsy - Setup & Teardown Method
+    assert_nil(parse_test_name('setup: function(){}'))
+  end
+
+  def test_parse_name_spec
+    # Falsy - Setup & Teardown Method
+    # assert_nil(parse_test_name('setup: function(){}'))
   end
 
 end

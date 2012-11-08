@@ -17,11 +17,14 @@ module VimBufferParser
   # Accepts any string (inc. whitespace)
   # Returns test name or nil
   def parse_test_name(line)
-    # Rudimentary test for key:value object member syntax + check for method sig
+    # early exclusion
+    return if line =~ /setup|teardown|testCase|describe/
+
+    # Rudimentary test for key:value object member syntax + check for method
     parts = line.split(":")
     return unless parts.length && parts.last =~ /function/
 
-    # So far so good! Parse out the test name (returned via magic var)
+    # Disco! Parse out the test name (returned via magic var)
     parts.pop
     parts.join(":").scan(/([^"|']+)/)
     $1
