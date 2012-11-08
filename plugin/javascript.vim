@@ -27,7 +27,7 @@ ruby << EOF
 # TODO:
 # QUESTION: How to read and write Vim variables from ruby?
 # Implement runner tester (isBuster?)
-# Make it work with specs an contexts
+# Add support for testCases/Specs (inc. nested)
 # Add custom test name prefix/string?
 # Add option to not clear previous results (slows loop?)
 # Make the script more extensible for other testrunners
