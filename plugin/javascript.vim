@@ -61,14 +61,19 @@ class JavaScriptTest
   # Method to parse a string for a buster test
   # Returns test name or nil
   def parse_buster_test_name(line)
-    # early exclusion
     return if line =~ /setup|teardown|testCase|describe/
 
-    # Rudimentary test for key:value object member syntax + check for method
-    parts = line.split(":")
+    # Branch on test flavour
+    if line =~ /it\(/
+      # it("yield 0 in score for gutter game", function () {
+      parts = line.split("it(")[1].split(",")
+    else
+      # Test for key:value object member syntax + check for method
+      parts = line.split(":")
+    end
     return unless parts.length && parts.last =~ /function/
 
-    # Disco! Parse out the test name (returned via magic var)
+    # Disco!
     parts.pop
     parts.join(":").scan(/([^"|']+)/)
     $1
