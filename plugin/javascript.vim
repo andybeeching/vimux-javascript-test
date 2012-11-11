@@ -23,11 +23,23 @@ function s:RunJavaScriptFocusedContext()
   ruby JavaScriptTest.new.run_context
 endfunction
 
+" Define some default settings
+if !exists("g:bustergroup")
+  let g:busterenv = "all"
+endif
+if !exists("g:buster_test_prefix")
+  let g:buster_test_prefix = ""
+endif
+if !exists("g:buster_spec_prefix")
+  let g:buster_spec_prefix = ""
+endif
+
 ruby << EOF
 # TODO:
 # QUESTION: How to read and write Vim variables from ruby?
 # Implement runner tester (isBuster?)
 # Add support for testCases/Specs (inc. nested)
+# Add support for setting group
 # Add custom test name prefix/string?
 # Add option to not clear previous results (slows loop?)
 # Make the script more extensible for other testrunners
@@ -45,17 +57,21 @@ class JavaScriptTest
     VIM::Buffer.current.name
   end
 
-  # Likely not needed with buster?
-  def spec_file?
-    current_file =~ /spec_|_spec/
-  end
-
   def line_number
     VIM::Buffer.current.line_number
   end
 
-  def is_buster?
-    true
+  def buster?
+    result = false
+    # VIM::Buffer.current is a list *like* object, so no iteration
+    # methods directly on the object (afaik)
+    1.upto(VIM::Buffer.current.length) do |line_number|
+      if VIM::Buffer.current[line_number] =~ /buster/
+        result = true
+        break;
+      end
+    end
+    result
   end
 
   # Method to parse a string for a buster test
@@ -79,10 +95,6 @@ class JavaScriptTest
     $1
   end
 
-  def run_spec
-    send_to_vimux("#{spec_command} '#{current_file}' -l #{line_number}")
-  end
-
   def run_unit_test
     method_name = nil
     # parse = parse_buster_test_name if is_buster?
@@ -96,11 +108,7 @@ class JavaScriptTest
   end
 
   def run_test
-    if spec_file?
-      run_spec
-    else
-      run_unit_test
-    end
+    run_unit_test
   end
 
   def run_context
@@ -117,29 +125,13 @@ class JavaScriptTest
     end
 
     if method_name
-      if spec_file?
-        send_to_vimux("#{spec_command} #{current_file} -l #{context_line_number}")
-      else
-        method_name = "\"/#{Regexp.escape(method_name)}/\""
-        send_to_vimux("ruby #{current_file} -n #{method_name}")
-      end
+      method_name = "\"/#{Regexp.escape(method_name)}/\""
+      send_to_vimux("ruby #{current_file} -n #{method_name}")
     end
   end
 
   def run_all
-    if spec_file?
-      send_to_vimux("#{spec_command} '#{current_file}'")
-    else
-      send_to_vimux("buster test -tests '#{current_file}'")
-    end
-  end
-
-  def spec_command
-    if File.exists?("Gemfile") && match = `bundle show rspec`.match(/(\d+\.\d+\.\d+)$/)
-      match.to_a.last.to_f < 2 ? "bundle exec spec" : "bundle exec rspec"
-    else
-      system("rspec -v > /dev/null 2>&1") ? "rspec --no-color" : "spec"
-    end
+    send_to_vimux("buster test -tests '#{current_file}'")
   end
 
   def send_to_vimux(test_command)
