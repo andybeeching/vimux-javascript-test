@@ -4,46 +4,38 @@ endif
 let g:loaded_vimux_buster = 1
 
 if !has("ruby")
+  echohl ErrorMsg
+  echon "Sorry, vimux-javascript-test requires ruby support."
   finish
 end
 
-command RunAllJavaScriptTests :call s:RunAllJavaScriptTests()
+command RunJavaScriptTestSuite :call s:RunJavaScriptTestSuite()
+command RunJavaScriptTestCase :call s:RunJavaScriptTestCase()
 command RunJavaScriptFocusedTest :call s:RunJavaScriptFocusedTest()
-command RunJavaScriptFocusedContext :call s:RunJavaScriptFocusedContext()
+" command RunJavaScriptFocusedContext :call s:RunJavaScriptFocusedContext()
 
-function s:RunAllJavaScriptTests()
+function s:RunJavaScriptTestSuite()
   ruby JavaScriptTest.new.run_all
+endfunction
+
+function s:RunJavaScriptTestCase()
+  ruby JavaScriptTest.new.run_file
 endfunction
 
 function s:RunJavaScriptFocusedTest()
   ruby JavaScriptTest.new.run_test
 endfunction
 
-function s:RunJavaScriptFocusedContext()
-  ruby JavaScriptTest.new.run_context
-endfunction
+" function s:RunJavaScriptFocusedContext()
+"   ruby JavaScriptTest.new.run_context
+" endfunction
 
 " Define some default settings
 if !exists("g:bustergroup")
-  let g:busterenv = "all"
-endif
-if !exists("g:buster_test_prefix")
-  let g:buster_test_prefix = ""
-endif
-if !exists("g:buster_spec_prefix")
-  let g:buster_spec_prefix = ""
+  let g:bustergroup = "all"
 endif
 
 ruby << EOF
-# TODO:
-# QUESTION: How to read and write Vim variables from ruby?
-# Implement runner tester (isBuster?)
-# Add support for testCases/Specs (inc. nested)
-# Add support for setting group
-# Add custom test name prefix/string?
-# Add option to not clear previous results (slows loop?)
-# Make the script more extensible for other testrunners
-# i.e. How to dynamically include/mixin an interface to pick up necessary methods
 module VIM
   class Buffer
     def method_missing(method, *args, &block)
@@ -52,15 +44,101 @@ module VIM
   end
 end
 
+class AbstractRunner
+  # should accept a buffer line number to parse from
+  # should return a string
+  def parse_test_name(line)
+  end
+
+  # should accept a filepath string and testname string
+  def build_cmd(file = nil, testname = nil)
+  end
+end
+
+# Public: Implements AbstractRunner interface for using Busterjs with vimux
+class BusterRunner < AbstractRunner
+
+  # Public: Parses the relevant test or spec name for a given line in buffer
+  #
+  # line  - The line contents to parse
+  #
+  # Returns a test name string
+  def parse_test_name(line)
+    # Early exclusions
+    return if line =~ /setup|teardown|testCase/
+
+    # To BDD, or TDD? Sorry.
+    if line =~ /it\(/
+      parts = line.split("it(")[1].split(",")
+    else
+      # Test for key:value object member syntax + check for method
+      parts = line.split(":")
+    end
+
+    # Try and prevent false positives by checking for a function
+    return unless parts.length && parts.last =~ /function/
+
+    # Disco!
+    parts.pop
+    parts.join(":").scan(/([^"|']+)/)
+    $1
+  end
+
+  # Public: Obtains a Buster config group if specified by user
+  #
+  # Returns a config group string or Boolean false
+  def read_group
+    group = VIM::evaluate("g:bustergroup")
+    group unless group == "all"
+  end
+
+  # Public: Builds a test runner command to execute in the terminal with vimux
+  #
+  # file      - The JavaScript file to execute
+  # testname  - The test to execute
+  #
+  # Returns a test name string
+  def build_cmd(file = nil, testname = nil)
+    cmd = ["buster test"]
+
+    # Filter by file if applicable
+    cmd.push("--tests '#{file}'") if file
+
+    # Filter by test name if applicable
+    cmd.push("'#{testname}'") if testname
+
+    # Filter by group if applicable
+    group = read_group
+    cmd.push("-g '#{group}'") if group
+
+    return cmd.join(' ')
+  end
+
+end
+
+# Public: Contains methods to map vimux-javascript commands into vimux input.
 class JavaScriptTest
+
+  def initialize
+    @runner = createRunner
+  end
+
+  # Public: Returns filepath of buffer where command was executed upon
   def current_file
     VIM::Buffer.current.name
   end
 
+  # Public: Returns location of cursor when command was executed in current buffer
   def line_number
     VIM::Buffer.current.line_number
   end
 
+  # Public: Factory to create correct runner object to parse buffer
+  def createRunner
+    return BusterRunner.new if buster?
+  end
+
+  # Public: Conditional to detect if Buster.js is being used
   def buster?
     result = false
     # VIM::Buffer.current is a list *like* object, so no iteration
@@ -74,66 +152,29 @@ class JavaScriptTest
     result
   end
 
-  # Method to parse a string for a buster test
-  # Returns test name or nil
-  def parse_buster_test_name(line)
-    return if line =~ /setup|teardown|testCase|describe/
-
-    # Branch on test flavour
-    if line =~ /it\(/
-      # it("yield 0 in score for gutter game", function () {
-      parts = line.split("it(")[1].split(",")
-    else
-      # Test for key:value object member syntax + check for method
-      parts = line.split(":")
-    end
-    return unless parts.length && parts.last =~ /function/
-
-    # Disco!
-    parts.pop
-    parts.join(":").scan(/([^"|']+)/)
-    $1
-  end
-
-  def run_unit_test
+  # Public: Executes contextual unit test if possible
+  def run_test
     method_name = nil
-    # parse = parse_buster_test_name if is_buster?
 
     (line_number).downto(1) do |line_number|
-      method_name = parse_buster_test_name(VIM::Buffer.current[line_number])
+      method_name = @runner.parse_test_name(VIM::Buffer.current[line_number])
       break if method_name
     end
 
-    send_to_vimux("buster test --tests #{current_file} '#{method_name}'") if method_name
+    send_to_vimux(@runner.build_cmd(current_file, method_name)) if method_name
   end
 
-  def run_test
-    run_unit_test
+  # Public: Executes the current file
+  def run_file
+    send_to_vimux(@runner.build_cmd(current_file))
   end
 
-  def run_context
-    method_name = nil
-    context_line_number = nil
-
-    (line_number + 1).downto(1) do |line_number|
-      if VIM::Buffer.current[line_number] =~ /(context|describe) "([^"]+)"/ ||
-         VIM::Buffer.current[line_number] =~ /(context|describe) '([^']+)'/
-        method_name = $2
-        context_line_number = line_number
-        break
-      end
-    end
-
-    if method_name
-      method_name = "\"/#{Regexp.escape(method_name)}/\""
-      send_to_vimux("ruby #{current_file} -n #{method_name}")
-    end
-  end
-
+  # Public: Executes entire test suite
   def run_all
-    send_to_vimux("buster test -tests '#{current_file}'")
+    send_to_vimux(@runner.build_cmd)
   end
 
+  # Public: Sends command to vimux for execution in tmux shell
   def send_to_vimux(test_command)
     Vim.command("call VimuxRunCommand(\"clear && #{test_command}\")")
   end

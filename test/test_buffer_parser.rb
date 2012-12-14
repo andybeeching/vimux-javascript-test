@@ -37,8 +37,14 @@ class TestVimBufferParser < MiniTest::Unit::TestCase
     assert_nil(parse_buster_test_name('teardown: function(){}'))
   end
 
-  def test_parse_name_spec
+  def test_parse_name_lifecycle_spec
     # Falsy - Setup & Teardown Method
+    assert_nil(parse_buster_test_name('before(function () {'))
+    assert_nil(parse_buster_test_name('after(function () {'))
+  end
+
+  def test_parse_name_spec
+    # Truthy - Variations
     assert_equal("foo bar:baz", parse_buster_test_name('it("foo bar:baz", function () {'))
     assert_equal("foo bar:baz", parse_buster_test_name('it(  "foo bar:baz", function () {'))
   end

@@ -27,6 +27,8 @@ module VimBufferParser
       # Test for key:value object member syntax + check for method
       parts = line.split(":")
     end
+
+    # Try and prevent false positives by checking for a function
     return unless parts.length && parts.last =~ /function/
 
     # Disco!
