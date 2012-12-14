@@ -9,7 +9,7 @@ WHAT?
 This plugin currently supports
   - [Buster.js](http://busterjs.org)
 
-The original idea and 90% of the code is based on the even more useful [vimux-ruby-test plugin](https://github.com/pgr0ss/vimux-ruby-test) by @pgr0ss. I just wanted the same functionality for running my JS tests.
+The original idea and structure of the code is based on the ruby equivalent [vimux-ruby-test plugin](https://github.com/pgr0ss/vimux-ruby-test) by @pgr0ss. I just wanted the same functionality for running my JS tests.
 
 HOW?
 ====================
