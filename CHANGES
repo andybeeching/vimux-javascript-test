@@ -1,0 +1,8 @@
+Version 0.1.1:
+ - Added note how to reset buster group filter variable
+ - Removing superfluous g:bustergroup var default
+ - More robust bustergroup var check
+ - MIT licenced
+ - Ideation
+ - Minor edits
+
