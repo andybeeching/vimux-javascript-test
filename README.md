@@ -46,6 +46,12 @@ Example (assuming a test group mapped to "node" specified in your buster.js conf
 let: g:bustergroup="node"
 ```
 
+To reset the group to the default in your buster configuration file, simply `unlet` the variable:
+
+```
+unlet: g:bustergroup
+```
+
 INSTALL
 ====================
 
