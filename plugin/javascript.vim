@@ -88,7 +88,8 @@ class BusterRunner < AbstractRunner
   #
   # Returns a config group string or Boolean false
   def read_group
-    group = VIM::evaluate("g:bustergroup")
+    exists = VIM::evaluate("exists('g:bustergroup')")
+    group = VIM::evaluate("g:bustergroup") unless exists == 0
     group unless group == "all"
   end
 
