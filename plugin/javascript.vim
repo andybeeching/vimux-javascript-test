@@ -30,11 +30,6 @@ endfunction
 "   ruby JavaScriptTest.new.run_context
 " endfunction
 
-" Define some default settings
-if !exists("g:bustergroup")
-  let g:bustergroup = "all"
-endif
-
 ruby << EOF
 module VIM
   class Buffer
@@ -89,8 +84,7 @@ class BusterRunner < AbstractRunner
   # Returns a config group string or Boolean false
   def read_group
     exists = VIM::evaluate("exists('g:bustergroup')")
-    group = VIM::evaluate("g:bustergroup") unless exists == 0
-    group unless group == "all"
+    VIM::evaluate("g:bustergroup") unless exists == 0
   end
 
   # Public: Builds a test runner command to execute in the terminal with vimux
