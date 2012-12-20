@@ -1,3 +1,8 @@
+Version 0.2.0:
+ - Support for buster executable context switching
+ - Updating tests to reflect implmentation naming
+ - Add info the buster local/global switch
+
 Version 0.1.1:
  - Added note how to reset buster group filter variable
  - Removing superfluous g:bustergroup var default
