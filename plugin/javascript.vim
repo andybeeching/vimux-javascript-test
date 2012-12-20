@@ -5,7 +5,7 @@ let g:loaded_vimux_buster = 1
 
 if !has("ruby")
   echohl ErrorMsg
-  echon "Sorry, vimux-javascript-test requires ruby support."
+  echon "Sorry, vimux-javascript-test requires vim +ruby support."
   finish
 end
 
@@ -30,6 +30,28 @@ endfunction
 "   ruby JavaScriptTest.new.run_context
 " endfunction
 
+" Buster user options
+command BusterUseLocal :call s:BusterUseLocal()
+command BusterUseGlobal :call s:BusterUseGlobal()
+command! -nargs=* BusterSetGroup call s:BusterSetGroup(<f-args>)
+command BusterSetGroupAll :call s:BusterSetGroup()
+
+function! s:BusterUseLocal()
+  let g:busterlocal = 1
+endfunction
+
+function! s:BusterUseGlobal()
+  let g:busterlocal = 0
+endfunction
+
+function! s:BusterSetGroup(...)
+  if a:0 > 0
+    let g:bustergroup = a:1
+  else
+    let g:bustergroup = ""
+  endif
+endfunction
+
 ruby << EOF
 module VIM
   class Buffer
@@ -39,7 +61,8 @@ module VIM
   end
 end
 
-class AbstractRunner
+# Semi-abstract runner interface
+class Runner
   # should accept a buffer line number to parse from
   # should return a string
   def parse_test_name(line)
@@ -48,10 +71,24 @@ class AbstractRunner
   # should accept a filepath string and testname string
   def build_cmd(file = nil, testname = nil)
   end
+
+  # Public: Obtains a Buster config group if specified by user
+  #
+  # Returns a config group string or Boolean false
+  # Cleans out nested quotes from user input
+  # Note: Zero is false in vimscript, so we return nil in that case
+  def read_var(variable)
+    exists = VIM::evaluate("exists('#{variable}')") != 0
+    if (exists)
+      val = VIM::evaluate(variable)
+      val.gsub /\'|"/, "" if defined? val.gsub
+      return val
+    end
+  end
 end
 
-# Public: Implements AbstractRunner interface for using Busterjs with vimux
-class BusterRunner < AbstractRunner
+# Public: Implements Runner interface for using Buster with vimux
+class BusterRunner < Runner
 
   # Public: Parses the relevant test or spec name for a given line in buffer
   #
@@ -79,13 +116,6 @@ class BusterRunner < AbstractRunner
     $1
   end
 
-  # Public: Obtains a Buster config group if specified by user
-  #
-  # Returns a config group string or Boolean false
-  def read_group
-    exists = VIM::evaluate("exists('g:bustergroup')")
-    VIM::evaluate("g:bustergroup") unless exists == 0
-  end
 
   # Public: Builds a test runner command to execute in the terminal with vimux
   #
@@ -94,7 +124,14 @@ class BusterRunner < AbstractRunner
   #
   # Returns a test name string
   def build_cmd(file = nil, testname = nil)
-    cmd = ["buster test"]
+    cmd = []
+
+    # buster executable
+    if (read_var("g:busterlocal") != 0)
+      cmd.push("./node_modules/.bin/buster-test")
+    else
+      cmd.push("buster test")
+    end
 
     # Filter by file if applicable
     cmd.push("--tests '#{file}'") if file
@@ -103,7 +140,7 @@ class BusterRunner < AbstractRunner
     cmd.push("'#{testname}'") if testname
 
     # Filter by group if applicable
-    group = read_group
+    group = read_var("g:bustergroup");
     cmd.push("-g '#{group}'") if group
 
     return cmd.join(' ')

@@ -11,17 +11,19 @@
 #   NOTE: treated as a RegExp for fuzzy matching
 #   Can't run test case (should be one per file anyway)
 
-module VimBufferParser
+module BusterRunner
 
-  # Method to parse a string for a buster test|spec case
-  # Accepts any string (inc. whitespace)
-  # Returns test name or nil
-  def parse_buster_test_name(line)
-    return if line =~ /setup|teardown|testCase|describe/
+  # Public: Parses the relevant test or spec name for a given line in buffer
+  #
+  # line  - The line contents to parse
+  #
+  # Returns a test name string
+  def parse_test_name(line)
+    # Early exclusions
+    return if line =~ /setup|teardown|testCase/
 
-    # Branch on test flavour
+    # To BDD, or TDD? Sorry.
     if line =~ /it\(/
-      # it("yield 0 in score for gutter game", function () {
       parts = line.split("it(")[1].split(",")
     else
       # Test for key:value object member syntax + check for method
