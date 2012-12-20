@@ -33,23 +33,44 @@ autocmd filetype javascript map <Leader>j :RunJavaScriptTestCase<CR>
 autocmd filetype javascript map <Leader>h :RunJavaScriptTestSuite<CR>
 ```
 
-BUSTER.JS CONFIG OPTIONS
+BUSTER.JS USER OPTIONS
 ====================
 
-By default Buster.js test runs will execute _all_ defined groups in your buster.js config file (usually just browsers and/or node.js). If you wish to filter by group (achieved manually via the `-g/--group flag` on the buster test command), which can be useful if you want to focus on just one target runtime without editing the config file, then you can set the `g:bustergroup` variable, either in your ~/.vimrc, or more usefully inside vim itself.
+The plugin exposes two variables for users to set, either directly or through calling associated utility methods. The latter can be combined with key mappings to provide custom shortcuts if desired.
 
-NOTE: You *must* use the `let` keyword to set this variable, *not* set. This is because I found global variables exposed from a vim plugin with `set` seemed to be readonly, so you could echo them but not set them. Also, you *must* quote the group name since they are strings. It may work with single word group names, but not with multiple words.
+CONFIGURATION GROUP
 
-Example (assuming a test group mapped to "node" specified in your buster.js config file):
+By default Buster.js test runs will execute _all_ defined groups in your buster.js config file (usually just browsers and/or node.js). If you wish to filter by group (achieved manually via the `-g/--group flag` on the `buster test` command), which can be useful if you want to focus on just one target runtime without editing the config file, then you can specify the group by:
 
+```vim
+" In ~/.vimrc
+" Setting a default config group (e.g. "node" or "browser")
+let g:bustergroup="node"
+
+" From Vim
+" Where param is name of the group
+:BusterSetGroup "Browser Tests"
+
+" Reset to 'all' groups
+:BusterSetGroupAll
+:BusterSetGroup ""
 ```
-let: g:bustergroup="node"
-```
 
-To reset the group to the default in your buster configuration file, simply `unlet` the variable:
+More on Buster Groups: http://docs.busterjs.org/en/latest/modules/buster-configuration/
 
-```
-unlet: g:bustergroup
+BUSTER TEST EXECUTABLE LOCATION
+
+By default the plugin will use the command `buster test` to execute test runs. For node.js environments Buster works best when tests are executed locally (as in a binary located inside the repository root), rather than the globally installed binary (if it exists). To allow developers to switch between the two (though browsers also work from a local path), the plugin exposes the following variable and methods:
+
+```vim
+" In ~/.vimrc
+" Tell plugin to run buster locally - assumes buster dependency available
+" in ./node_modules folder. Install via npm install --dependencies if need be.
+let g:busterlocal="yes"   " technically can be any string
+
+" From Vim
+:BusterUseLocal
+:BusterUseGlobal
 ```
 
 INSTALL
@@ -78,7 +99,7 @@ REQUIREMENTS
 CONTRIBUTING
 ====================
 
-While I have found no way to import external ruby code into Vim, I have used TDD to develop the core buffer parsing logic for running the focused tests. If you would like to contribute please ensure you add tests, and ensure they are passing, before sending a pull request. To install the test dependencies cd to the repo folder and run "bundler install". You can use the supplied Guard to autorun the minitest suite.
+While I have found no way to import external ruby code into Vim, I have used TDD to develop the buffer parsing logic for running the focused tests. If you would like to contribute please add tests to support your patch, and ensure they are passing before sending a pull request. To install the test dependencies `cd` to the repo folder and run `bundler install`. You can use the supplied Guard to autorun the minitest suite.
 
 ACKNOWLEDGEMENT
 ====================
