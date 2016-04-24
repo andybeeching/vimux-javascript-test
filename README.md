@@ -11,6 +11,22 @@ This plugin currently supports
 
 The original idea and structure of the code is based on the ruby equivalent [vimux-ruby-test plugin](https://github.com/pgr0ss/vimux-ruby-test) by @pgr0ss. I just wanted the same functionality for running my JS tests.
 
+REQUIREMENTS
+====================
+
+- vim with ruby support (compiled +ruby)
+- [vimux](https://github.com/benmills/vimux)
+
+INSTALL
+====================
+
+Most easily accomplished with [pathogen](https://github.com/tpope/vim-pathogen). From the shell:
+
+```
+cd ~/.vim/bundle
+git clone git://github.com/andybeeching/vimux-javascript.git
+```
+
 HOW?
 ====================
 
@@ -66,42 +82,38 @@ By default the plugin will use the command `buster test` to execute test runs. F
 " In ~/.vimrc
 " Tell plugin to run buster locally - assumes buster dependency available
 " in ./node_modules folder. Install via npm install --dependencies if need be.
-let g:busterlocal="yes"   " technically can be any string
+let g:busterlocal="true"   " technically can be any string
 
 " From Vim
 :BusterUseLocal
 :BusterUseGlobal
 ```
 
-INSTALL
+ISSUES
 ====================
 
-Most easily accomplished with [pathogen](https://github.com/tpope/vim-pathogen). From the shell:
+KEY MAPPINGS IGNORED
 
-```
-cd ~/.vim/bundle
-git clone git://github.com/andybeeching/vimux-javascript.git
-```
-
-TODO
-===================
-
-- Add support for other popular runners: Jasmine, Mocha, Vows, NodeUnit
-- Expose global variable to turn off the auto-clear functionality
-- Support for running a parent test/spec context
-
-REQUIREMENTS
-====================
-
-- vim with ruby support (compiled +ruby)
-- [vimux](https://github.com/benmills/vimux)
+I've noticed on rare occasions if running both this vimux pugin and its counterpart for ruby in a long-running Vim session that key mappings sometimes stop working. As far as I can see Vim's file detection gets a little confused so some keymappings are ignored in the JS version, or the keys become mapped to the wrong command for the current filetype. Initiating a fresh Vim instance cleared this up for me.
 
 CONTRIBUTING
 ====================
 
+Pull requests welcome!
+
 While I have found no way to import external ruby code into Vim, I have used TDD to develop the buffer parsing logic for running the focused tests. If you would like to contribute please add tests to support your patch, and ensure they are passing before sending a pull request. To install the test dependencies `cd` to the repo folder and run `bundler install`. You can use the supplied Guard to autorun the minitest suite.
 
-ACKNOWLEDGEMENT
+TODO
+===================
+
+- Better testrunner detect - can't issue global run command w/o reference to runner being present
+-- Better to follow test runner CLI logic to detect presence (i.e. awk for a buster.js file?)
+- Add note about per-dir vimrc files.
+- Add support for other popular runners: Jasmine, Mocha, Vows, NodeUnit
+- Expose global variable to turn off the auto-clear functionality
+- Support for running a parent test/spec context
+
+ACKNOWLEDGEMENTS
 ====================
 
 Once again to the authors of the vimux-ruby-test plugin for providing a reference implementation to get this plugin started, and of course @benmills for the awesome vimux plugin which facilitates such IDE shenanigans within the terminal. Vim on!
